@@ -39,28 +39,32 @@ const generateHashedPasswordWithSalt = (password) => {
  * @param {Db} db
  * @returns {Router}
  */
-module.exports = (router, db) => {
-    const collection = db.collection("users");
+module.exports = {
+    path: '/auth',
+    init: (router, db) => {
+        const collection = db.collection("users");
 
-    // user registration
-    router.post("/register", async (req, res) => {
-        // todo validate
-        const json = req.body;
-        const conflict = await collection.findOne({email: json.email});
-        if (conflict !== null) {
-            logger.warn(`email ${json.email} already exists`);
-            res.status(409).send(`email ${json.email} already exists`);
-        }
-        json.password = generateHashedPasswordWithSalt(json.password);
-        await collection.insertOne(json);
-        logger.info(`registered new user ${json._id}`);
-        res.status(200).send(json);
-    });
+        // user registration
+        router.post("/register", async (req, res) => {
+            // todo validate
+            const json = req.body;
+            const conflict = await collection.findOne({email: json.email});
+            if (conflict !== null) {
+                logger.warn(`email ${json.email} already exists`);
+                res.status(409).send(`email ${json.email} already exists`);
+            } else {
+                json.password = generateHashedPasswordWithSalt(json.password);
+                await collection.insertOne(json);
+                logger.info(`registered new user ${json._id}`);
+                res.status(201).send();
+            }
+        });
 
-    // user login
-    router.post("/login", async (req, res) => {
-        res.status(501).send();
-    });
+        // user login
+        router.post("/login", async (req, res) => {
+            res.status(501).send();
+        });
 
-    return router;
+        return router;
+    }
 };
