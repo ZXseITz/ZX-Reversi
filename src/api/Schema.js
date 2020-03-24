@@ -1,9 +1,9 @@
-const {Collection, ObjectID} = require('mongodb');
+const {ObjectID} = require('mongodb');
 const {ValidationError} = require('./Errors.js');
 
-const nameRegex = /^\w*$/;    //fixme
-const emailRegex = /^.*$/;    //fixme
-const passwordRegex = /^.*$/;    //fixme
+const nameRegex = /^\w+$/;
+const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const passwordRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,20})/;
 
 const keywords = new Set(['_id', 'created_at', 'updated_at']);
 
@@ -25,6 +25,13 @@ class Schema {
         });
     }
 
+    /**
+     * Validates a document for insertion.
+     * Appends created_at and updated_at automatically
+     *
+     * @param {Object} doc - document to validate
+     * @returns {{updated_at: Date, created_at: Date}}
+     */
     validateCreate(doc) {
         if (!doc) throw new ValidationError("document is undefined");
         const errors = [];
@@ -47,6 +54,13 @@ class Schema {
         return create;
     }
 
+    /**
+     * Validates a document for updating.
+     * Appends updated_at automatically
+     *
+     * @param {Object} doc
+     * @returns {{updated_at: Date}}
+     */
     validateUpdate(doc) {
         if (!doc) throw new ValidationError("document is undefined");
         const errors = [];
@@ -66,7 +80,6 @@ class Schema {
 }
 
 Schema.Types = {
-    objectid: (value) => value.constructor.name === 'ObjectID',
     str: (value) => typeof value === 'string',
     name: (value) => typeof value === 'string' && nameRegex.test(value),
     email: (value) => typeof value === 'string' && emailRegex.test(value),
@@ -77,6 +90,7 @@ Schema.Types = {
     date: (value) => !!value && value.constructor === Date,
     object: (value) => !!value && value.constructor === Object,
     array: (value) => !!value && value.constructor === Array,
+    objectid: (value) => !!value && value.constructor === ObjectID,
 };
 
 module.exports = {
