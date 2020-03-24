@@ -1,37 +1,7 @@
-const crypto  = require('crypto');
 const logger = require('../api/Logger.js').get('auth');
+const {generateHashedPasswordWithSalt} = require('../api/Password.js');
+const {userSchema} = require('../api/Schema.js');
 
-/**
- * Creates a random string with given length
- * @param {number} length - length of random string
- * @returns {string}
- */
-const generateRandomString = (length) => {
-    return crypto.randomBytes(Math.ceil(length / 2))
-        .toString('hex')
-        .slice(0, length);
-};
-
-/**
- * Hashes the password with given salt
- * @param {string} password - plain text password
- * @param {string} salt - random salt
- * @returns {string}
- */
-const hashPasswordWithSHA512 = (password, salt) => {
-    return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-};
-
-/**
- * Encrypts a password
- * @param {string} password - plain text password
- * @returns {string}
- */
-const generateHashedPasswordWithSalt = (password) => {
-    const salt = generateRandomString(16);
-    const hashedPassword = hashPasswordWithSHA512(password, salt);
-    return `${salt}:${hashedPassword}`
-};
 
 /**
  * Inits the authentication routes
@@ -46,8 +16,7 @@ module.exports = {
 
         // user registration
         router.post("/register", async (req, res) => {
-            // todo validate
-            const json = req.body;
+            const json = userSchema.validateCreate(req.body);
             const conflict = await collection.findOne({email: json.email});
             if (conflict !== null) {
                 logger.warn(`email ${json.email} already exists`);
