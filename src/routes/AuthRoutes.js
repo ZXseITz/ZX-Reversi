@@ -18,7 +18,7 @@ module.exports = {
         router.post("/register", async (req, res) => {
             const json = userSchema.validateCreate(req.body);
             const conflict = await collection.findOne({email: json.email});
-            if (conflict !== null) {
+            if (conflict.length > 0) {
                 logger.warn(`email ${json.email} already exists`);
                 res.status(409).send(`email ${json.email} already exists`);
             } else {
