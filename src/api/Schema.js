@@ -3,7 +3,8 @@ const {ValidationError} = require('./Errors.js');
 
 const nameRegex = /^\w+$/;
 const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-const passwordRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,20})/;
+// const passwordRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,20})/;
+const passwordRegex = /^[\w&!@#\$\^\*\.-]{8,20}$/;
 
 const keywords = new Set(['_id', 'created_at', 'updated_at']);
 
@@ -95,6 +96,10 @@ Schema.Types = {
 
 module.exports = {
     Schema,
+    loginSchema: new Schema([
+        {name: 'email', type: Schema.Types.email, required: true},
+        {name: 'password', type: Schema.Types.password, required: true},
+    ]),
     userSchema: new Schema([
         {name: 'name', type: Schema.Types.name, required: true},
         {name: 'email', type: Schema.Types.email, required: true},
