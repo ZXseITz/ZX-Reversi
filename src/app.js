@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 const dbConnection = require('./api/DbConnection');
+const {initAuthentication} = require('./api/Authentication.js');
 const initRoutes = require('./routes/Routes');
 
 const port = 8000;
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 dbConnection.connect().then(db => {
+    initAuthentication(db);
     initRoutes(app, db).listen(port, () => logger.info(`running on port ${port}`));
 }).catch(err => {
     logger.error(err);
