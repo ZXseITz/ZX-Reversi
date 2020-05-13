@@ -16,7 +16,7 @@ module.exports = {
 
         // user registration
         router.get("/home", async (req, res) => {
-            res.status(200).send("hello")
+            res.status(200).send(`hello ${req.user.name}`)
         });
 
         return router;

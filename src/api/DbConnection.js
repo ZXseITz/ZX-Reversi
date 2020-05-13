@@ -19,7 +19,7 @@ module.exports =  {
             useNewUrlParser: true
         });
         const database = client.db(c.name);
-        logger.info("connected to mongodb");
+        logger.info(`connected to mongodb://${c.host}:${c.port}`);
         return database
     }
 };
