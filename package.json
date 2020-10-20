@@ -15,6 +15,7 @@
     "mongodb": "^3.5.5"
   },
   "dependencies": {
+    "@jest/globals": "^26.6.0",
     "body-parser": "latest",
     "config": "^3.3.0",
     "express": "^4.17.1",

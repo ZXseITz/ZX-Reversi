@@ -1,18 +1,20 @@
-const game = require('./game')
+const {Board, GameStates} = require('./board')
 
-require('yargs')
-    .command('create-game [whitePlayer] [blackPlayer]', 'Crate a new game',
-        (args) => {
-            args.positional('whitePlayer', {
-                type: 'string',
-                describe: 'the object of the white player'
-            });
-            args.positional('blackPlayer', {
-                type: 'string',
-                describe: 'the object of the black player'
-            });
-        }, argv => {
-            console.log(`new game id: ${game.create(argv.whitePlayer, argv.blackPlayer)}`);
-        })
-    .help()
-    .argv
+const boards = {};
+
+module.exports = {
+    create: (white, black) => {
+        // todo create ObjectID
+        const board = new Board(7, white, black);
+        boards[board.id] = board;
+        return board.id;
+    },
+    set: (boardID, player, coord) => {
+        const board = boards[boardID];
+        return board.set(player, coord);
+    },
+    count: () => {
+        return boards.count();
+    },
+    GameStates
+}
