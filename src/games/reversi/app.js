@@ -1,20 +1,20 @@
-const {Board, GameStates} = require('./board')
+const {Match, GameStates} = require('./match')
 
-const boards = {};
+const matches = {};
 
 module.exports = {
     create: (white, black) => {
         // todo create ObjectID
-        const board = new Board(7, white, black);
-        boards[board.id] = board;
-        return board.id;
+        const match = new Match(7, white, black);
+        matches[match.id] = match;
+        return match.id;
     },
-    set: (boardID, player, coord) => {
-        const board = boards[boardID];
-        return board.set(player, coord);
+    set: (matchID, player, vec) => {
+        const board = matches[matchID];
+        return board.set(player, vec);
     },
     count: () => {
-        return boards.count();
+        return matches.count();
     },
     GameStates
 }
