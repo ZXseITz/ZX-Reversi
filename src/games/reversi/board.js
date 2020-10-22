@@ -1,3 +1,5 @@
+const {FieldIterator, isOnBoard} = require('./fieldIterator')
+
 /**
  * Possible game states
  *
@@ -37,35 +39,6 @@ const ErrorCodes = {
 }
 
 /**
- * Directions iterators
- *
- * @type {{
- *   DOWN: {next: (function(number): number), check: (function(number): boolean)},
- *   LEFT: {next: (function(number): number), check: (function(number): boolean)},
- *   RIGHT: {next: (function(number): number), check: (function(number): boolean)},
- *   UP: {next: (function(number): number), check: (function(number): boolean)},
- * }}
- */
-const directions = {
-    LEFT: {
-        next: (x) => x - 1,
-        check: (x) => (x % 8) < 7
-    },
-    UP: {
-        next: (x) => x - 8,
-        check: (x) => x >= 0
-    },
-    DOWN: {
-        next: (x) => x + 8,
-        check: (x) => x < 64
-    },
-    RIGHT: {
-        next: (x) => x + 1,
-        check: (x) => (x % 8) > 0
-    },
-}
-
-/**
  * Board class
  */
 class Board {
@@ -80,15 +53,26 @@ class Board {
         // field state: 0 empty, 1 white, 2 black
         this.id = id;
         this.fields = [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 2, 0, 0, 0,
-            0, 0, 0, 2, 1, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 2, 0, 0, 0],
+            [0, 0, 0, 2, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
         ]
+        this.history = []
+        this.iterators = {
+            RIGHT: new FieldIterator(this, {x: 1, y: 0}),
+            RIGHT_UP: new FieldIterator(this, {x: 1, y: 1}),
+            UP: new FieldIterator(this, {x: 0, y: 1}),
+            LEFT_UP: new FieldIterator(this, {x: -1, y: 1}),
+            LEFT: new FieldIterator(this, {x: -1, y: 0}),
+            LEFT_DOWN: new FieldIterator(this, {x: -1, y: -1}),
+            DOWN: new FieldIterator(this, {x: 0, y: -1}),
+            RIGHT_DOWN: new FieldIterator(this, {x: 1, y: -1}),
+        }
         this.white = white;
         this.black = black;
         this.count = 4;
@@ -110,22 +94,23 @@ class Board {
      * List all opponent fields of a given direction iterator
      *
      * @param {number} color - Player color: 1 white, 2 black
-     * @param {number} index - Player token index [0, 63]
-     * @param {{
-     *   next: (function(number): number),
-     *   check: (function(number): boolean)
-     * }} direction - direction iterator
+     * @param {Vec2} point - Player token index [0, 63]
+     * @param {FieldIterator} iterator - field iterator
      * @return {[number]} Opponent fields
      */
-    getOpponentFields(color, index, direction) {
+    getOpponentFields(color, point, iterator) {
         const fields = [];
         const opponentColor = 3 - color;
-        let i = direction.next(index);
-        while (direction.check(i) && this.fields[i] === opponentColor) {
-            fields.push(i);
-            i = direction.next(i);
+        iterator.set(point);
+        let state = iterator.next();
+        while (state === opponentColor) {
+            fields.push({
+                x: iterator.point.x,
+                y: iterator.point.y,
+            });
+            state = iterator.next();
         }
-        if (direction.check(i) && this.fields[i] === color) {
+        if (state === color) {
             return fields;
         }
         return [];
@@ -135,10 +120,10 @@ class Board {
      * Sets a token on this board
      *
      * @param {ObjectID} player - Player ID
-     * @param {number} index - Token coordinate (0, 0) to (7, 7)
+     * @param {Vec2} point - Token coordinate (0, 0) to (7, 7)
      * @return {number} Error code
      **/
-    set(player, index) {
+    set(player, point) {
         // check board state
         if (this.state >= 10) {
             return ErrorCodes.GAME_FINISHED;
@@ -151,12 +136,16 @@ class Board {
             return ErrorCodes.NOT_YOUR_TURN;
         }
         // check field coordinate and range
-        if (index >= 0 && index < 64 && this.fields[index] === 0) {
+        if (isOnBoard(point)) {
             const fields = [
-                ...this.getOpponentFields(color, index, directions.LEFT),
-                ...this.getOpponentFields(color, index, directions.UP),
-                ...this.getOpponentFields(color, index, directions.DOWN),
-                ...this.getOpponentFields(color, index, directions.RIGHT)
+                ...this.getOpponentFields(color, point, this.iterators.RIGHT),
+                ...this.getOpponentFields(color, point, this.iterators.RIGHT_UP),
+                ...this.getOpponentFields(color, point, this.iterators.UP),
+                ...this.getOpponentFields(color, point, this.iterators.LEFT_UP),
+                ...this.getOpponentFields(color, point, this.iterators.LEFT),
+                ...this.getOpponentFields(color, point, this.iterators.LEFT_DOWN),
+                ...this.getOpponentFields(color, point, this.iterators.DOWN),
+                ...this.getOpponentFields(color, point, this.iterators.RIGHT_DOWN),
             ];
             if (fields.length > 0) {
                 // valid action
@@ -172,7 +161,6 @@ class Board {
 
 module.exports = {
     Board,
-    directions,
     States,
     ErrorCodes
 }
